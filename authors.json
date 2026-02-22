@@ -1,0 +1,18 @@
+{
+  "mod1": [
+    {
+      "author": "knzet",
+      "link": "https://github.com/knzet/mod1-firmwares"
+    },
+    {
+      "author": "rob-scape",
+      "link": "https://github.com/rob-scape"
+    }
+  ],
+  "mod2": [
+    {
+      "author": "knzet",
+      "link": "https://github.com/knzet/placeholder-url"
+    }
+  ]
+}
