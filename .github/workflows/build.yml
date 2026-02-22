@@ -16,10 +16,6 @@ jobs:
       with:
         persist-credentials: false # disable HTTPS token
         ssh-strict: true # optional, ensures SSH is used
-    - name: Force SSH remote
-      run: |
-        git remote set-url origin git@github.com:${GITHUB_REPOSITORY}.git
-        git remote -v
 
     - name: Verify system info
       run: |
@@ -67,13 +63,9 @@ jobs:
             || echo "Failed to copy $sketch_name.ino.hex"
         done
 
-    - name: Setup SSH
-      uses: webfactory/ssh-agent@v0.9.1
-      with:
-        ssh-private-key: ${{ secrets.DEPLOY_KEY }}
-
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
+        personal_token: ${{ secrets.PAT_TOKEN }}
         publish_dir: ./site
         publish_branch: gh-pages
