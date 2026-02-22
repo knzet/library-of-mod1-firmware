@@ -1,13 +1,17 @@
 [
+  {"author": "knzet", "sketch": "attenuverterv2", "file": "firmware/knzet_attenuverterv2.hex"}
+,
   {"author": "knzet", "sketch": "eurorack2ms", "file": "firmware/knzet_eurorack2ms.hex"}
 ,
   {"author": "knzet", "sketch": "ms2eurorack", "file": "firmware/knzet_ms2eurorack.hex"}
 ,
   {"author": "knzet", "sketch": "quantizer", "file": "firmware/knzet_quantizer.hex"}
 ,
+  {"author": "knzet", "sketch": "steplengtheuclidian", "file": "firmware/knzet_steplengtheuclidian.hex"}
+,
   {"author": "rob-scape", "sketch": "TuningHelper", "file": "firmware/rob-scape_TuningHelper.hex"}
 ,
-  {"author": "rob-scape", "sketch": "dual", "file": "firmware/rob-scape_dual_ad_envelope.hex"}
+  {"author": "rob-scape", "sketch": "dual_ad_envelope", "file": "firmware/rob-scape_dual_ad_envelope.hex"}
 ,
   {"author": "rob-scape", "sketch": "mod1-1D-wavetable", "file": "firmware/rob-scape_mod1-1D-wavetable.hex"}
 ,
@@ -23,9 +27,9 @@
 ,
   {"author": "rob-scape", "sketch": "mod1-turingmachine", "file": "firmware/rob-scape_mod1-turingmachine.hex"}
 ,
-  {"author": "rob-scape", "sketch": "mod1", "file": "firmware/rob-scape_mod1_3ch_LFO.hex"}
+  {"author": "rob-scape", "sketch": "mod1_3ch_LFO", "file": "firmware/rob-scape_mod1_3ch_LFO.hex"}
 ,
-  {"author": "rob-scape", "sketch": "mod1", "file": "firmware/rob-scape_mod1_LFO.hex"}
+  {"author": "rob-scape", "sketch": "mod1_LFO", "file": "firmware/rob-scape_mod1_LFO.hex"}
 ,
-  {"author": "rob-scape", "sketch": "mod1", "file": "firmware/rob-scape_mod1_randomwalk.hex"}
+  {"author": "rob-scape", "sketch": "mod1_randomwalk", "file": "firmware/rob-scape_mod1_randomwalk.hex"}
 ]
