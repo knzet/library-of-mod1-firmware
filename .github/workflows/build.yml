@@ -16,6 +16,10 @@ jobs:
       with:
         persist-credentials: false # disable HTTPS token
         ssh-strict: true # optional, ensures SSH is used
+    - name: Force SSH remote
+      run: |
+        git remote set-url origin git@github.com:${GITHUB_REPOSITORY}.git
+        git remote -v
 
     - name: Verify system info
       run: |
@@ -36,33 +40,30 @@ jobs:
     - name: Update Arduino cores
       run: |
         echo "Updating core index..."
-        export PATH=$PATH:$HOME/bin
         export PATH=$PATH:$GITHUB_WORKSPACE/bin
         arduino-cli core update-index || echo "Failed to update cores"
 
     - name: Install Arduino AVR core
       run: |
         echo "Installing arduino:avr core..."
-        export PATH=$PATH:$HOME/bin
         export PATH=$PATH:$GITHUB_WORKSPACE/bin
         arduino-cli core install arduino:avr || echo "Failed to install core"
 
     - name: Compile sketches
       run: |
-        export PATH=$PATH:$HOME/bin
         export PATH=$PATH:$GITHUB_WORKSPACE/bin
-        mkdir -p docs/firmware
+        mkdir -p site/firmware
         for sketch in $(find mod1 -name '*.ino' -type f); do
           sketch_dir=$(dirname "$sketch")
           author_dir=$(echo "$sketch_dir" | cut -d/ -f2)
           sketch_name=$(basename "$sketch" .ino)
-          out_dir="docs/firmware/tmp_build"
+          out_dir="site/firmware/tmp_build"
           mkdir -p "$out_dir"
           echo "Compiling $sketch_name from $author_dir..."
           arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir" \
             || echo "Failed to compile $sketch_name"
           safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
-          cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name" \
+          cp "$out_dir/$sketch_name.ino.hex" "site/firmware/$safe_name" \
             || echo "Failed to copy $sketch_name.ino.hex"
         done
 
