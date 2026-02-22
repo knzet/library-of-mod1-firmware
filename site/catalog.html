@@ -24,13 +24,34 @@
       text-align: center;
       margin-bottom: 30px;
     }
+    .module-section {
+      margin-bottom: 60px;
+    }
+    .module-section h2 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 5px;
+    }
     .author-section {
       margin-bottom: 40px;
     }
-    .author-section h2 {
+    .author-section h3 {
       margin-bottom: 15px;
       border-bottom: 2px solid #3498db;
       padding-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .author-section h3 a {
+      font-size: 0.9em;
+      color: #3498db;
+      text-decoration: none;
+      vertical-align: middle;
+    }
+    .author-section h3 a:hover {
+      text-decoration: underline;
     }
     .sketch-grid {
       display: grid;
@@ -83,38 +104,73 @@
   async function buildCatalog() {
     const container = document.getElementById("catalog");
     try {
-      const res = await fetch('firmware.json');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const files = await res.json();
+      // Load firmware and authors
+      const [fwRes, authorsRes] = await Promise.all([
+        fetch('firmware.json'),
+        fetch('authors.json')
+      ]);
+      if (!fwRes.ok) throw new Error(`Failed to load firmware.json: HTTP ${fwRes.status}`);
+      if (!authorsRes.ok) throw new Error(`Failed to load authors.json: HTTP ${authorsRes.status}`);
 
-      // Group by author
-      const authors = {};
-      files.forEach(fw => {
-        if (!authors[fw.author]) authors[fw.author] = [];
-        authors[fw.author].push({ name: fw.sketch, file: fw.file });
+      const firmwareList = await fwRes.json();
+      const authorsData = await authorsRes.json();
+
+      // Group firmware by module then author
+      const modules = {};
+      firmwareList.forEach(fw => {
+        const mod = fw.module || "mod1"; // default if not specified
+        if (!modules[mod]) modules[mod] = {};
+        if (!modules[mod][fw.author]) modules[mod][fw.author] = [];
+        modules[mod][fw.author].push(fw);
       });
 
-      // Build catalog sections
-      for (const author in authors) {
-        const section = document.createElement("div");
-        section.className = "author-section";
-        section.innerHTML = `<h2>${author}</h2>`;
+      // Ensure placeholder for mod2
+      if (!modules.mod2) modules.mod2 = {};
 
-        const grid = document.createElement("div");
-        grid.className = "sketch-grid";
+      // Build sections per module
+      for (const modName in modules) {
+        const modSection = document.createElement("div");
+        modSection.className = "module-section";
+        modSection.innerHTML = `<h2>${modName.toUpperCase()}</h2>`;
 
-        authors[author].forEach(sketch => {
-          const card = document.createElement("div");
-          card.className = "sketch-card";
-          card.innerHTML = `
-            <div>${sketch.name}</div>
-            <a href="${sketch.file}" download>Download HEX</a>
-          `;
-          grid.appendChild(card);
-        });
+        const authorsInModule = modules[modName];
+        if (Object.keys(authorsInModule).length === 0) {
+          const placeholder = document.createElement("p");
+          placeholder.textContent = "No firmware uploaded yet.";
+          modSection.appendChild(placeholder);
+        } else {
+          for (const author in authorsInModule) {
+            const section = document.createElement("div");
+            section.className = "author-section";
 
-        section.appendChild(grid);
-        container.appendChild(section);
+            // Look up link from authors.json
+            let link = "#";
+            if (authorsData[modName]) {
+              const match = authorsData[modName].find(a => a.author === author);
+              if (match) link = match.link;
+            }
+
+            section.innerHTML = `<h3><span>${author}</span> <a href="${link}" target="_blank" rel="noopener noreferrer">🔗</a></h3>`;
+
+            const grid = document.createElement("div");
+            grid.className = "sketch-grid";
+
+            authorsInModule[author].forEach(sketch => {
+              const card = document.createElement("div");
+              card.className = "sketch-card";
+              card.innerHTML = `
+                <div>${sketch.sketch}</div>
+                <a href="${sketch.file}" download>Download HEX</a>
+              `;
+              grid.appendChild(card);
+            });
+
+            section.appendChild(grid);
+            modSection.appendChild(section);
+          }
+        }
+
+        container.appendChild(modSection);
       }
 
     } catch (err) {
