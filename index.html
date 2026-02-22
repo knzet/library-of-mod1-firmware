@@ -1,3 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Library of Mod1 Firmware</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+    }
+    main {
+      max-width: 800px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      margin: 0 0 20px;
+    }
+    label { font-weight: bold; display: block; margin-top: 15px; }
+    select, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-top: 5px;
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover { background-color: #2980b9; }
+    #log {
+      margin-top: 20px;
+      background: #ecf0f1;
+      padding: 15px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 14px;
+    }
+    a.catalog-link {
+      display: inline-block;
+      margin-top: 20px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+    }
+    a.catalog-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Library of Mod1 Firmware</h1>
+</header>
+
+<main>
+  <h2>Flasher Tool</h2>
+
+  <label>Firmware Version:</label>
+  <select id="firmware">
+    <option value="" disabled selected hidden>Select One</option>
+  </select>
+
+  <label>Bootloader:</label>
+  <select id="bootloader">
+    <option value="nano">New Bootloader</option>
+    <option value="nanoatmega328old">Old Bootloader</option>
+  </select>
+
+  <button id="flash">Connect & Flash</button>
+
+  <div id="log"></div>
+
+  <a href="catalog.html" class="catalog-link">Browse all sketches by author</a>
+</main>
+
+
 <script type="module">
   import Avrgirl from "https://cdn.skypack.dev/avrgirl-arduino";
 
@@ -70,3 +170,5 @@
     }
   });
 </script>
+</body>
+</html>
