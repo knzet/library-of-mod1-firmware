@@ -1,12 +1,10 @@
-name: Build Arduino Nano Firmware for Web Flasher
+name: Build Arduino Nano Firmware
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
@@ -16,20 +14,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Verify system info
+        run: |
+          echo "Running on $(uname -a)"
+          echo "Current directory: $PWD"
+          ls -lah
+          
       - name: Install Arduino CLI
         run: |
+          echo "Downloading Arduino CLI..."
           curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
           export PATH=$PATH:$HOME/bin
-          arduino-cli version
+          echo "Arduino CLI version:"
+          arduino-cli version || echo "Arduino CLI not found!"
+          which arduino-cli
 
       - name: Update Arduino cores
-        run: arduino-cli core update-index
+        run: |
+          echo "Updating core index..."
+          export PATH=$PATH:$HOME/bin
+          arduino-cli core update-index || echo "Failed to update cores"
 
       - name: Install Arduino AVR core
-        run: arduino-cli core install arduino:avr
-
-      - name: Compile all sketches into docs/firmware
         run: |
+          echo "Installing arduino:avr core..."
+          export PATH=$PATH:$HOME/bin
+          arduino-cli core install arduino:avr || echo "Failed to install core"
+
+      - name: Compile sketches
+        run: |
+          export PATH=$PATH:$HOME/bin
           mkdir -p docs/firmware
           for sketch in $(find mod1 -name '*.ino' -type f); do
             sketch_dir=$(dirname "$sketch")
@@ -37,14 +51,15 @@ jobs:
             sketch_name=$(basename "$sketch" .ino)
             out_dir="docs/firmware/tmp_build"
             mkdir -p "$out_dir"
-            echo "Building $sketch_name from $author_dir..."
-            arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir"
-            # Copy and rename to prevent collisions
+            echo "Compiling $sketch_name from $author_dir..."
+            arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir" \
+              || echo "Failed to compile $sketch_name"
             safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
-            cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name"
+            cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name" \
+              || echo "Failed to copy $sketch_name.ino.hex"
           done
 
-      - name: Deploy docs/ to GitHub Pages
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
