@@ -11,57 +11,61 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Verify system info
-        run: |
-          echo "Running on $(uname -a)"
-          echo "Current directory: $PWD"
-          ls -lah
-          
-      - name: Install Arduino CLI
-        run: |
-          echo "Downloading Arduino CLI..."
-          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
-          export PATH=$PATH:$HOME/bin
-          echo "Arduino CLI version:"
-          arduino-cli version || echo "Arduino CLI not found!"
-          which arduino-cli
+    - name: Verify system info
+      run: |
+        echo "Running on $(uname -a)"
+        echo "Current directory: $PWD"
+        ls -lah
 
-      - name: Update Arduino cores
-        run: |
-          echo "Updating core index..."
-          export PATH=$PATH:$HOME/bin
-          arduino-cli core update-index || echo "Failed to update cores"
+    - name: Install Arduino CLI
+      run: |
+        echo "Downloading Arduino CLI..."
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+        # Add the CLI location inside the repo to PATH
+        export PATH=$PATH:$GITHUB_WORKSPACE/bin
+        echo "Arduino CLI version:"
+        arduino-cli version
+        which arduino-cli
 
-      - name: Install Arduino AVR core
-        run: |
-          echo "Installing arduino:avr core..."
-          export PATH=$PATH:$HOME/bin
-          arduino-cli core install arduino:avr || echo "Failed to install core"
+    - name: Update Arduino cores
+      run: |
+        echo "Updating core index..."
+        export PATH=$PATH:$HOME/bin
+        export PATH=$PATH:$GITHUB_WORKSPACE/bin
+        arduino-cli core update-index || echo "Failed to update cores"
 
-      - name: Compile sketches
-        run: |
-          export PATH=$PATH:$HOME/bin
-          mkdir -p docs/firmware
-          for sketch in $(find mod1 -name '*.ino' -type f); do
-            sketch_dir=$(dirname "$sketch")
-            author_dir=$(echo "$sketch_dir" | cut -d/ -f2)
-            sketch_name=$(basename "$sketch" .ino)
-            out_dir="docs/firmware/tmp_build"
-            mkdir -p "$out_dir"
-            echo "Compiling $sketch_name from $author_dir..."
-            arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir" \
-              || echo "Failed to compile $sketch_name"
-            safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
-            cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name" \
-              || echo "Failed to copy $sketch_name.ino.hex"
-          done
+    - name: Install Arduino AVR core
+      run: |
+        echo "Installing arduino:avr core..."
+        export PATH=$PATH:$HOME/bin
+        export PATH=$PATH:$GITHUB_WORKSPACE/bin
+        arduino-cli core install arduino:avr || echo "Failed to install core"
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          publish_branch: main
+    - name: Compile sketches
+      run: |
+        export PATH=$PATH:$HOME/bin
+        export PATH=$PATH:$GITHUB_WORKSPACE/bin
+        mkdir -p docs/firmware
+        for sketch in $(find mod1 -name '*.ino' -type f); do
+          sketch_dir=$(dirname "$sketch")
+          author_dir=$(echo "$sketch_dir" | cut -d/ -f2)
+          sketch_name=$(basename "$sketch" .ino)
+          out_dir="docs/firmware/tmp_build"
+          mkdir -p "$out_dir"
+          echo "Compiling $sketch_name from $author_dir..."
+          arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir" \
+            || echo "Failed to compile $sketch_name"
+          safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
+          cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name" \
+            || echo "Failed to copy $sketch_name.ino.hex"
+        done
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs
+        publish_branch: main
