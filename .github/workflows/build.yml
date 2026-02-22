@@ -48,16 +48,28 @@ jobs:
         mkdir -p site/firmware
         for sketch in $(find mod1 -name '*.ino' -type f); do
           sketch_dir=$(dirname "$sketch")
-          author_dir=$(echo "$sketch_dir" | cut -d/ -f2)
+          
+          # Get the author folder: first folder under mod1
+          author_dir=$(echo "$sketch_dir" | sed -E 's|mod1/([^/]+)/.*|\1|')
+          
           sketch_name=$(basename "$sketch" .ino)
           out_dir="site/firmware/tmp_build"
           mkdir -p "$out_dir"
+
           echo "Compiling $sketch_name from $author_dir..."
           arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir" \
-            || echo "Failed to compile $sketch_name"
-          safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
-          cp "$out_dir/$sketch_name.ino.hex" "site/firmware/$safe_name" \
-            || echo "Failed to copy $sketch_name.ino.hex"
+            || echo "WARNING: Failed to compile $sketch_name"
+
+          # Find generated .hex file (Arduino CLI may name it differently)
+          hex_file=$(find "$out_dir" -name "*.hex" | head -n 1)
+          if [ -f "$hex_file" ]; then
+            # Normalize filename: author_sketch.hex
+            safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
+            cp "$hex_file" "site/firmware/$safe_name"
+            echo "Copied as $safe_name"
+          else
+            echo "WARNING: No .hex file generated for $sketch_name"
+          fi
         done
 
     - name: Generate firmware JSON
@@ -67,9 +79,9 @@ jobs:
         for file in site/firmware/*.hex; do
           [ -e "$file" ] || continue
           filename=$(basename "$file")
-          # assume format author_sketch.hex
+          # Split normalized name: author_sketch.hex
           author=$(echo "$filename" | cut -d'_' -f1)
-          sketch=$(echo "$filename" | cut -d'_' -f2 | sed 's/\.hex//')
+          sketch=$(echo "$filename" | cut -d'_' -f2- | sed 's/\.hex$//')
           if [ "$first" = true ]; then
             first=false
           else
@@ -78,7 +90,6 @@ jobs:
           echo "  {\"author\": \"$author\", \"sketch\": \"$sketch\", \"file\": \"firmware/$filename\"}" >> site/firmware.json
         done
         echo "]" >> site/firmware.json
-
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
