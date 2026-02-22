@@ -77,6 +77,12 @@
       display: block;
       margin-top: 10px;
     }
+    .sketch-card a.flasher-link {
+      color: #3498db;
+    }
+    .sketch-card a.flasher-link:hover {
+      text-decoration: underline;
+    }
     a.back-link {
       display: block;
       margin-bottom: 20px;
@@ -104,7 +110,6 @@
   async function buildCatalog() {
     const container = document.getElementById("catalog");
     try {
-      // Load firmware and authors
       const [fwRes, authorsRes] = await Promise.all([
         fetch('firmware.json'),
         fetch('authors.json')
@@ -118,7 +123,7 @@
       // Group firmware by module then author
       const modules = {};
       firmwareList.forEach(fw => {
-        const mod = fw.module || "mod1"; // default if not specified
+        const mod = fw.module || "mod1"; 
         if (!modules[mod]) modules[mod] = {};
         if (!modules[mod][fw.author]) modules[mod][fw.author] = [];
         modules[mod][fw.author].push(fw);
@@ -127,7 +132,6 @@
       // Ensure placeholder for mod2
       if (!modules.mod2) modules.mod2 = {};
 
-      // Build sections per module
       for (const modName in modules) {
         const modSection = document.createElement("div");
         modSection.className = "module-section";
@@ -143,7 +147,6 @@
             const section = document.createElement("div");
             section.className = "author-section";
 
-            // Look up link from authors.json
             let link = "#";
             if (authorsData[modName]) {
               const match = authorsData[modName].find(a => a.author === author);
@@ -158,9 +161,13 @@
             authorsInModule[author].forEach(sketch => {
               const card = document.createElement("div");
               card.className = "sketch-card";
+
+              const flasherURL = `index.html?author=${encodeURIComponent(author)}&sketch=${encodeURIComponent(sketch.sketch)}`;
+
               card.innerHTML = `
                 <div>${sketch.sketch}</div>
                 <a href="${sketch.file}" download>Download HEX</a>
+                <a href="${flasherURL}" class="flasher-link">Flash in browser</a>
               `;
               grid.appendChild(card);
             });
