@@ -99,76 +99,100 @@
 
 
 <script type="module">
-  import Avrgirl from "https://cdn.skypack.dev/avrgirl-arduino";
+import Avrgirl from "https://cdn.skypack.dev/avrgirl-arduino";
 
-  const log = msg => {
-    const logDiv = document.getElementById("log");
-    logDiv.textContent += msg + "\n";
-    logDiv.scrollTop = logDiv.scrollHeight;
-  };
+const log = msg => {
+  const logDiv = document.getElementById("log");
+  logDiv.textContent += msg + "\n";
+  logDiv.scrollTop = logDiv.scrollHeight;
+};
 
-  const firmwareSelect = document.getElementById("firmware");
-  const flashButton = document.getElementById("flash");
-  flashButton.disabled = true; // disable until populated
+const firmwareSelect = document.getElementById("firmware");
+const flashButton = document.getElementById("flash");
+flashButton.disabled = true; // disable until populated
 
-  async function populateFirmware() {
-    try {
-      const res = await fetch('firmware.json');
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const firmwareList = await res.json();
-
-      if (firmwareList.length === 0) {
-        log("No firmware found in firmware.json");
-        return;
-      }
-
-      firmwareList.forEach(fw => {
-        const option = document.createElement("option");
-        option.value = fw.file;
-        option.textContent = `${fw.author}: ${fw.sketch}`;
-        firmwareSelect.appendChild(option);
-      });
-
-      flashButton.disabled = false; // enable after population
-
-    } catch(err) {
-      log("Error populating firmware: " + err);
-    }
-  }
-
-  populateFirmware();
-
-  flashButton.addEventListener("click", async () => {
-    try {
-      const firmwarePath = firmwareSelect.value;
-      if (!firmwarePath) {
-        log("Please select a firmware version first.");
-        return;
-      }
-
-      log("Requesting serial port...");
-      const port = await navigator.serial.requestPort();
-      await port.close();
-
-      const bootloader = document.getElementById("bootloader").value;
-
-      log("Downloading firmware...");
-      const response = await fetch(firmwarePath);
-      const buffer = await response.arrayBuffer();
-
-      const boardType = bootloader === "nano" ? "nano" : "nanoatmega328old";
-
-      log("Flashing...");
-      const avrgirl = new Avrgirl({ board: boardType });
-      avrgirl.flash(Buffer.from(buffer), error => {
-        if (error) log("Flash failed: " + error);
-        else log("Flash successful.");
-      });
-
-    } catch(err) {
-      log("Error: " + err);
-    }
+// Parse query parameters from URL
+function getQueryParams() {
+  const params = {};
+  const search = window.location.search.substring(1);
+  search.split("&").forEach(pair => {
+    const [key, value] = pair.split("=");
+    if (key && value) params[decodeURIComponent(key)] = decodeURIComponent(value);
   });
+  return params;
+}
+
+const queryParams = getQueryParams();
+
+async function populateFirmware() {
+  try {
+    const res = await fetch('firmware.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const firmwareList = await res.json();
+
+    if (firmwareList.length === 0) {
+      log("No firmware found in firmware.json");
+      return;
+    }
+
+    firmwareList.forEach(fw => {
+      const option = document.createElement("option");
+      option.value = fw.file;
+      option.textContent = `${fw.author}: ${fw.sketch}`;
+      firmwareSelect.appendChild(option);
+
+      // If query matches, select this option once
+      if (
+        queryParams.author &&
+        queryParams.sketch &&
+        fw.author === queryParams.author &&
+        fw.sketch === queryParams.sketch
+      ) {
+        option.selected = true;
+      }
+    });
+
+    flashButton.disabled = false; // enable after population
+
+  } catch(err) {
+    log("Error populating firmware: " + err);
+  }
+}
+
+populateFirmware();
+
+flashButton.addEventListener("click", async () => {
+  try {
+    const firmwarePath = firmwareSelect.value;
+    if (!firmwarePath) {
+      log("Please select a firmware version first.");
+      return;
+    }
+
+    log("Requesting serial port...");
+    const port = await navigator.serial.requestPort();
+    await port.close();
+
+    const bootloader = document.getElementById("bootloader").value;
+
+    log("Downloading firmware...");
+    const response = await fetch(firmwarePath);
+    const buffer = await response.arrayBuffer();
+
+    const boardType = bootloader === "nano" ? "nano" : "nanoatmega328old";
+
+    log("Flashing...");
+    const avrgirl = new Avrgirl({ board: boardType });
+    avrgirl.flash(Buffer.from(buffer), error => {
+      if (error) log("Flash failed: " + error);
+      else log("Flash successful.");
+    });
+
+  } catch(err) {
+    log("Error: " + err);
+  }
+});
 </script>
+
 </body>
 </html>
