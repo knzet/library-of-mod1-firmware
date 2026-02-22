@@ -13,9 +13,6 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      with:
-        persist-credentials: false # disable HTTPS token
-        ssh-strict: true # optional, ensures SSH is used
 
     - name: Verify system info
       run: |
@@ -62,6 +59,25 @@ jobs:
           cp "$out_dir/$sketch_name.ino.hex" "site/firmware/$safe_name" \
             || echo "Failed to copy $sketch_name.ino.hex"
         done
+
+    - name: Generate firmware JSON
+      run: |
+        echo "[" > site/firmware.json
+        first=true
+        for file in site/firmware/*.hex; do
+          [ -e "$file" ] || continue
+          filename=$(basename "$file")
+          # assume format author_sketch.hex
+          author=$(echo "$filename" | cut -d'_' -f1)
+          sketch=$(echo "$filename" | cut -d'_' -f2 | sed 's/\.hex//')
+          if [ "$first" = true ]; then
+            first=false
+          else
+            echo "," >> site/firmware.json
+          fi
+          echo "  {\"author\": \"$author\", \"sketch\": \"$sketch\", \"file\": \"firmware/$filename\"}" >> site/firmware.json
+        done
+        echo "]" >> site/firmware.json
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4

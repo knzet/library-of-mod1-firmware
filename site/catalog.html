@@ -82,19 +82,19 @@
   async function buildCatalog() {
     const container = document.getElementById("catalog");
     try {
-      const res = await fetch('firmware/');
-      const html = await res.text();
-      const files = [...html.matchAll(/href="([^"]+\.hex)"/g)].map(m => m[1]);
+      const res = await fetch('firmware.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const files = await res.json();
 
+      // Group by author
       const authors = {};
-      files.forEach(f => {
-        const [author, ...sketchParts] = f.replace('.hex','').split('_');
-        const sketch = sketchParts.join('_');
-        if(!authors[author]) authors[author] = [];
-        authors[author].push({ name: sketch, file: f });
+      files.forEach(fw => {
+        if (!authors[fw.author]) authors[fw.author] = [];
+        authors[fw.author].push({ name: fw.sketch, file: fw.file });
       });
 
-      for(const author in authors) {
+      // Build catalog sections
+      for (const author in authors) {
         const section = document.createElement("div");
         section.className = "author-section";
         section.innerHTML = `<h2>${author}</h2>`;
@@ -107,7 +107,7 @@
           card.className = "sketch-card";
           card.innerHTML = `
             <div>${sketch.name}</div>
-            <a href="firmware/${sketch.file}" download>Download HEX</a>
+            <a href="${sketch.file}" download>Download HEX</a>
           `;
           grid.appendChild(card);
         });
@@ -116,7 +116,7 @@
         container.appendChild(section);
       }
 
-    } catch(err) {
+    } catch (err) {
       container.textContent = "Error loading catalog: " + err;
     }
   }
