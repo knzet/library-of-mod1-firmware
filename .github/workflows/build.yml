@@ -11,8 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        persist-credentials: false # disable HTTPS token
+        ssh-strict: true # optional, ensures SSH is used
 
     - name: Verify system info
       run: |
