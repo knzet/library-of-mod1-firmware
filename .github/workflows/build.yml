@@ -1,0 +1,52 @@
+name: Build Arduino Nano Firmware for Web Flasher
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Arduino CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+          export PATH=$PATH:$HOME/bin
+          arduino-cli version
+
+      - name: Update Arduino cores
+        run: arduino-cli core update-index
+
+      - name: Install Arduino AVR core
+        run: arduino-cli core install arduino:avr
+
+      - name: Compile all sketches into docs/firmware
+        run: |
+          mkdir -p docs/firmware
+          for sketch in $(find mod1 -name '*.ino' -type f); do
+            sketch_dir=$(dirname "$sketch")
+            author_dir=$(echo "$sketch_dir" | cut -d/ -f2)
+            sketch_name=$(basename "$sketch" .ino)
+            out_dir="docs/firmware/tmp_build"
+            mkdir -p "$out_dir"
+            echo "Building $sketch_name from $author_dir..."
+            arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old "$sketch_dir" --output-dir "$out_dir"
+            # Copy and rename to prevent collisions
+            safe_name="${author_dir// /_}_${sketch_name// /_}.hex"
+            cp "$out_dir/$sketch_name.ino.hex" "docs/firmware/$safe_name"
+          done
+
+      - name: Deploy docs/ to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v7
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          publish_branch: main

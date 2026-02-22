@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Firmware Catalog</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    h2 { margin-top: 40px; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin: 6px 0; }
+  </style>
+</head>
+<body>
+
+  <h1>Arduino Nano Firmware Catalog</h1>
+  <a href="index.html">Back to Flasher</a>
+
+  <div id="catalog"></div>
+
+  <script>
+    async function buildCatalog() {
+      const container = document.getElementById("catalog");
+      try {
+        const res = await fetch('firmware/');
+        const html = await res.text();
+        const files = [...html.matchAll(/href="([^"]+\.hex)"/g)].map(m => m[1]);
+
+        // Group sketches by author
+        const authors = {};
+        files.forEach(f => {
+          const [author, ...sketchParts] = f.replace('.hex','').split('_');
+          const sketch = sketchParts.join('_');
+          if (!authors[author]) authors[author] = [];
+          authors[author].push({ name: sketch, file: f });
+        });
+
+        // Build HTML
+        for (const author in authors) {
+          const section = document.createElement("div");
+          section.innerHTML = `<h2>${author}</h2>`;
+          const ul = document.createElement("ul");
+
+          authors[author].forEach(sketch => {
+            const li = document.createElement("li");
+            li.innerHTML = `<a href="firmware/${sketch.file}" download>${sketch.name}</a>`;
+            ul.appendChild(li);
+          });
+
+          section.appendChild(ul);
+          container.appendChild(section);
+        }
+
+      } catch (err) {
+        container.textContent = "Error loading catalog: " + err;
+      }
+    }
+
+    buildCatalog();
+  </script>
+
+</body>
+</html>

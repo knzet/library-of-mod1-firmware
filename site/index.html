@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Arduino Nano Flasher</title>
+  <style>
+    body { font-family: sans-serif; max-width: 500px; margin: 40px auto; }
+    button { padding: 10px 16px; }
+    select { padding: 6px; }
+    #log { margin-top: 20px; white-space: pre-wrap; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+  <h2>Arduino Nano Firmware Flasher</h2>
+
+  <label>Firmware Version:</label>
+  <select id="firmware"></select>
+
+  <br><br>
+
+  <label>Bootloader:</label>
+  <select id="bootloader">
+    <option value="nano">New Bootloader</option>
+    <option value="nanoatmega328old">Old Bootloader</option>
+  </select>
+
+  <br><br>
+
+  <button id="flash">Connect & Flash</button>
+
+  <div id="log"></div>
+
+  <br>
+  <a href="catalog.html">Browse all sketches by author</a>
+
+  <script type="module">
+    import Avrgirl from "https://cdn.skypack.dev/avrgirl-arduino";
+
+    const log = (msg) => {
+      document.getElementById("log").textContent += msg + "\n";
+    };
+
+    const firmwareSelect = document.getElementById("firmware");
+
+    async function populateFirmware() {
+      try {
+        const res = await fetch('firmware/');
+        const html = await res.text();
+        const files = [...html.matchAll(/href="([^"]+\.hex)"/g)].map(m => m[1]);
+
+        files.forEach(f => {
+          const [author, ...sketchParts] = f.replace('.hex','').split('_');
+          const sketch = sketchParts.join('_');
+
+          const option = document.createElement("option");
+          option.value = f;
+          option.textContent = `${author}: ${sketch}`;
+          firmwareSelect.appendChild(option);
+        });
+      } catch (err) {
+        log("Error populating firmware: " + err);
+      }
+    }
+
+    populateFirmware();
+
+    document.getElementById("flash").addEventListener("click", async () => {
+      try {
+        log("Requesting serial port...");
+        const port = await navigator.serial.requestPort();
+        await port.close();
+
+        const bootloader = document.getElementById("bootloader").value;
+        const firmwarePath = firmwareSelect.value;
+
+        log("Downloading firmware...");
+        const response = await fetch(firmwarePath);
+        const buffer = await response.arrayBuffer();
+
+        const boardType = bootloader === "nano" ? "nano" : "nanoatmega328old";
+
+        log("Flashing...");
+        const avrgirl = new Avrgirl({ board: boardType });
+
+        avrgirl.flash(Buffer.from(buffer), (error) => {
+          if (error) {
+            log("Flash failed: " + error);
+          } else {
+            log("Flash successful.");
+          }
+        });
+
+      } catch (err) {
+        log("Error: " + err);
+      }
+    });
+  </script>
+
+</body>
+</html>
