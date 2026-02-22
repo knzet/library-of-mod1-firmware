@@ -1,62 +1,128 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Firmware Catalog</title>
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
-    h2 { margin-top: 40px; }
-    ul { list-style: none; padding-left: 0; }
-    li { margin: 6px 0; }
+    body {
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background-color: #f5f5f5;
+      margin: 0; padding: 0;
+    }
+    header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px 40px;
+      text-align: center;
+    }
+    main {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .author-section {
+      margin-bottom: 40px;
+    }
+    .author-section h2 {
+      margin-bottom: 15px;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 5px;
+    }
+    .sketch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+    .sketch-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .sketch-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+    .sketch-card a {
+      text-decoration: none;
+      color: #2c3e50;
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    a.back-link {
+      display: block;
+      margin-bottom: 20px;
+      text-decoration: none;
+      color: #3498db;
+      font-weight: bold;
+      text-align: center;
+    }
+    a.back-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
-  <h1>Arduino Nano Firmware Catalog</h1>
-  <a href="index.html">Back to Flasher</a>
+<header>
+  <h1>Library of Mod1 Firmware</h1>
+</header>
 
+<main>
+  <a href="index.html" class="back-link">← Back to Flasher Tool</a>
   <div id="catalog"></div>
+</main>
 
-  <script>
-    async function buildCatalog() {
-      const container = document.getElementById("catalog");
-      try {
-        const res = await fetch('firmware/');
-        const html = await res.text();
-        const files = [...html.matchAll(/href="([^"]+\.hex)"/g)].map(m => m[1]);
+<script>
+  async function buildCatalog() {
+    const container = document.getElementById("catalog");
+    try {
+      const res = await fetch('firmware/');
+      const html = await res.text();
+      const files = [...html.matchAll(/href="([^"]+\.hex)"/g)].map(m => m[1]);
 
-        // Group sketches by author
-        const authors = {};
-        files.forEach(f => {
-          const [author, ...sketchParts] = f.replace('.hex','').split('_');
-          const sketch = sketchParts.join('_');
-          if (!authors[author]) authors[author] = [];
-          authors[author].push({ name: sketch, file: f });
+      const authors = {};
+      files.forEach(f => {
+        const [author, ...sketchParts] = f.replace('.hex','').split('_');
+        const sketch = sketchParts.join('_');
+        if(!authors[author]) authors[author] = [];
+        authors[author].push({ name: sketch, file: f });
+      });
+
+      for(const author in authors) {
+        const section = document.createElement("div");
+        section.className = "author-section";
+        section.innerHTML = `<h2>${author}</h2>`;
+
+        const grid = document.createElement("div");
+        grid.className = "sketch-grid";
+
+        authors[author].forEach(sketch => {
+          const card = document.createElement("div");
+          card.className = "sketch-card";
+          card.innerHTML = `
+            <div>${sketch.name}</div>
+            <a href="firmware/${sketch.file}" download>Download HEX</a>
+          `;
+          grid.appendChild(card);
         });
 
-        // Build HTML
-        for (const author in authors) {
-          const section = document.createElement("div");
-          section.innerHTML = `<h2>${author}</h2>`;
-          const ul = document.createElement("ul");
-
-          authors[author].forEach(sketch => {
-            const li = document.createElement("li");
-            li.innerHTML = `<a href="firmware/${sketch.file}" download>${sketch.name}</a>`;
-            ul.appendChild(li);
-          });
-
-          section.appendChild(ul);
-          container.appendChild(section);
-        }
-
-      } catch (err) {
-        container.textContent = "Error loading catalog: " + err;
+        section.appendChild(grid);
+        container.appendChild(section);
       }
-    }
 
-    buildCatalog();
-  </script>
+    } catch(err) {
+      container.textContent = "Error loading catalog: " + err;
+    }
+  }
+
+  buildCatalog();
+</script>
 
 </body>
 </html>
